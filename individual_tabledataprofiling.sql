@@ -1,0 +1,596 @@
+CREATE DATABASE CAPSTONE_EDA;
+
+
+SELECT
+  *
+FROM
+  "CAPSTONE_EDA"."PUBLIC"."INVENTORY"
+LIMIT
+  10;
+
+-- ============================================
+-- DATA PROFILING: CAPSTONE_EDA.PUBLIC.INVENTORY
+-- ============================================
+
+-- 1. Row count & basic shape
+SELECT COUNT(*) AS total_rows FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 2. Null counts per column
+SELECT
+  COUNT(*) AS total_rows,
+  SUM(CASE WHEN INVENTORY_ID IS NULL THEN 1 ELSE 0 END) AS null_inventory_id,
+  SUM(CASE WHEN PRODUCT_ID IS NULL THEN 1 ELSE 0 END) AS null_product_id,
+  SUM(CASE WHEN WAREHOUSE_ID IS NULL THEN 1 ELSE 0 END) AS null_warehouse_id,
+  SUM(CASE WHEN STOCK_QUANTITY IS NULL THEN 1 ELSE 0 END) AS null_stock_quantity,
+  SUM(CASE WHEN REORDER_LEVEL IS NULL THEN 1 ELSE 0 END) AS null_reorder_level,
+  SUM(CASE WHEN LAST_UPDATED IS NULL THEN 1 ELSE 0 END) AS null_last_updated
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 3. Distinct counts per column
+SELECT
+  COUNT(DISTINCT INVENTORY_ID) AS distinct_inventory_id,
+  COUNT(DISTINCT PRODUCT_ID) AS distinct_product_id,
+  COUNT(DISTINCT WAREHOUSE_ID) AS distinct_warehouse_id,
+  COUNT(DISTINCT STOCK_QUANTITY) AS distinct_stock_quantity,
+  COUNT(DISTINCT REORDER_LEVEL) AS distinct_reorder_level,
+  COUNT(DISTINCT LAST_UPDATED) AS distinct_last_updated
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 4. Duplicate check on INVENTORY_ID
+SELECT INVENTORY_ID, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+GROUP BY INVENTORY_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 5. Numeric stats for STOCK_QUANTITY
+SELECT
+  MIN(STOCK_QUANTITY) AS min_stock,
+  MAX(STOCK_QUANTITY) AS max_stock,
+  AVG(STOCK_QUANTITY) AS avg_stock,
+  MEDIAN(STOCK_QUANTITY) AS median_stock,
+  STDDEV(STOCK_QUANTITY) AS stddev_stock,
+  PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY STOCK_QUANTITY) AS p25_stock,
+  PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY STOCK_QUANTITY) AS p75_stock
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 6. Numeric stats for REORDER_LEVEL
+SELECT
+  MIN(REORDER_LEVEL) AS min_reorder,
+  MAX(REORDER_LEVEL) AS max_reorder,
+  AVG(REORDER_LEVEL) AS avg_reorder,
+  MEDIAN(REORDER_LEVEL) AS median_reorder,
+  STDDEV(REORDER_LEVEL) AS stddev_reorder
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 7. Date range for LAST_UPDATED
+SELECT
+  MIN(LAST_UPDATED) AS earliest_update,
+  MAX(LAST_UPDATED) AS latest_update,
+  DATEDIFF('day', MIN(LAST_UPDATED), MAX(LAST_UPDATED)) AS date_span_days
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY;
+
+-- 8. Top 10 products by stock quantity
+SELECT PRODUCT_ID, SUM(STOCK_QUANTITY) AS total_stock
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+GROUP BY PRODUCT_ID
+ORDER BY total_stock DESC
+LIMIT 10;
+
+-- 9. Inventory distribution by warehouse
+SELECT WAREHOUSE_ID, COUNT(*) AS record_count, SUM(STOCK_QUANTITY) AS total_stock
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+GROUP BY WAREHOUSE_ID
+ORDER BY total_stock DESC;
+
+-- 10. Items at or below reorder level (need restocking)
+SELECT *
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+WHERE STOCK_QUANTITY <= REORDER_LEVEL
+ORDER BY STOCK_QUANTITY ASC;
+
+-- 11. Updates over time (activity trend)
+SELECT LAST_UPDATED, COUNT(*) AS records_updated
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+GROUP BY LAST_UPDATED
+ORDER BY LAST_UPDATED;
+
+-- 12. Stock quantity distribution (histogram buckets)
+SELECT
+  CASE
+    WHEN STOCK_QUANTITY BETWEEN 0 AND 50 THEN '0-50'
+    WHEN STOCK_QUANTITY BETWEEN 51 AND 100 THEN '51-100'
+    WHEN STOCK_QUANTITY BETWEEN 101 AND 200 THEN '101-200'
+    WHEN STOCK_QUANTITY BETWEEN 201 AND 500 THEN '201-500'
+    ELSE '500+'
+  END AS stock_bucket,
+  COUNT(*) AS count
+FROM CAPSTONE_EDA.PUBLIC.INVENTORY
+GROUP BY stock_bucket
+ORDER BY stock_bucket;
+
+
+-- ================================================
+-- DATA PROFILING: CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+-- ================================================
+
+-- 1. Row count
+SELECT COUNT(*) AS total_rows FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS;
+
+-- 2. Sample data
+SELECT * FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS LIMIT 10;
+
+-- 3. Null counts per column
+SELECT
+  COUNT(*) AS total_rows,
+  SUM(CASE WHEN CUSTOMER_ID IS NULL THEN 1 ELSE 0 END) AS null_customer_id,
+  SUM(CASE WHEN CUSTOMER_NAME IS NULL THEN 1 ELSE 0 END) AS null_customer_name,
+  SUM(CASE WHEN EMAIL IS NULL THEN 1 ELSE 0 END) AS null_email,
+  SUM(CASE WHEN PHONE IS NULL THEN 1 ELSE 0 END) AS null_phone,
+  SUM(CASE WHEN CITY IS NULL THEN 1 ELSE 0 END) AS null_city,
+  SUM(CASE WHEN STATE IS NULL THEN 1 ELSE 0 END) AS null_state,
+  SUM(CASE WHEN REGION IS NULL THEN 1 ELSE 0 END) AS null_region,
+  SUM(CASE WHEN CUSTOMER_SEGMENT IS NULL THEN 1 ELSE 0 END) AS null_customer_segment
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS;
+
+-- 4. Distinct counts per column
+SELECT
+  COUNT(DISTINCT CUSTOMER_ID) AS distinct_customer_id,
+  COUNT(DISTINCT CUSTOMER_NAME) AS distinct_customer_name,
+  COUNT(DISTINCT EMAIL) AS distinct_email,
+  COUNT(DISTINCT PHONE) AS distinct_phone,
+  COUNT(DISTINCT CITY) AS distinct_city,
+  COUNT(DISTINCT STATE) AS distinct_state,
+  COUNT(DISTINCT REGION) AS distinct_region,
+  COUNT(DISTINCT CUSTOMER_SEGMENT) AS distinct_customer_segment
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS;
+
+-- 5. Duplicate check on CUSTOMER_ID
+SELECT CUSTOMER_ID, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY CUSTOMER_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 6. Duplicate check on EMAIL
+SELECT EMAIL, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY EMAIL
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 7. Phone number stats
+SELECT
+  MIN(PHONE) AS min_phone,
+  MAX(PHONE) AS max_phone,
+  AVG(PHONE) AS avg_phone,
+  MIN(LENGTH(PHONE::VARCHAR)) AS min_phone_length,
+  MAX(LENGTH(PHONE::VARCHAR)) AS max_phone_length
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS;
+
+-- 8. Customer segment distribution
+SELECT CUSTOMER_SEGMENT, COUNT(*) AS customer_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY CUSTOMER_SEGMENT
+ORDER BY customer_count DESC;
+
+-- 9. Region distribution
+SELECT REGION, COUNT(*) AS customer_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY REGION
+ORDER BY customer_count DESC;
+
+-- 10. State distribution
+SELECT STATE, COUNT(*) AS customer_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY STATE
+ORDER BY customer_count DESC;
+
+-- 11. City distribution (top 15)
+SELECT CITY, COUNT(*) AS customer_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY CITY
+ORDER BY customer_count DESC
+LIMIT 15;
+
+-- 12. Customers per segment per region (cross-tab)
+SELECT REGION, CUSTOMER_SEGMENT, COUNT(*) AS customer_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY REGION, CUSTOMER_SEGMENT
+ORDER BY REGION, customer_count DESC;
+
+-- 13. Email domain analysis
+SELECT
+  SPLIT_PART(EMAIL, '@', 2) AS email_domain,
+  COUNT(*) AS customer_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+GROUP BY email_domain
+ORDER BY customer_count DESC
+LIMIT 10;
+
+-- 14. Invalid email check (missing @)
+SELECT *
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS
+WHERE EMAIL NOT LIKE '%@%.%'
+   OR EMAIL IS NULL;
+
+-- 15. Name length stats
+SELECT
+  MIN(LENGTH(CUSTOMER_NAME)) AS min_name_len,
+  MAX(LENGTH(CUSTOMER_NAME)) AS max_name_len,
+  AVG(LENGTH(CUSTOMER_NAME)) AS avg_name_len
+FROM CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS;
+
+
+-- =============================================
+-- DATA PROFILING: CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+-- =============================================
+
+-- 1. Row count
+SELECT COUNT(*) AS total_rows FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS;
+
+-- 2. Sample data
+SELECT * FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS LIMIT 10;
+
+-- 3. Null counts per column
+SELECT
+  COUNT(*) AS total_rows,
+  SUM(CASE WHEN ORDER_ID IS NULL THEN 1 ELSE 0 END) AS null_order_id,
+  SUM(CASE WHEN CUSTOMER_ID IS NULL THEN 1 ELSE 0 END) AS null_customer_id,
+  SUM(CASE WHEN ORDER_DATE IS NULL THEN 1 ELSE 0 END) AS null_order_date,
+  SUM(CASE WHEN ORDER_STATUS IS NULL THEN 1 ELSE 0 END) AS null_order_status,
+  SUM(CASE WHEN TOTAL_AMOUNT IS NULL THEN 1 ELSE 0 END) AS null_total_amount,
+  SUM(CASE WHEN PAYMENT_METHOD IS NULL THEN 1 ELSE 0 END) AS null_payment_method,
+  SUM(CASE WHEN CHANNEL IS NULL THEN 1 ELSE 0 END) AS null_channel
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS;
+
+-- 4. Distinct counts per column
+SELECT
+  COUNT(DISTINCT ORDER_ID) AS distinct_order_id,
+  COUNT(DISTINCT CUSTOMER_ID) AS distinct_customer_id,
+  COUNT(DISTINCT ORDER_DATE) AS distinct_order_date,
+  COUNT(DISTINCT ORDER_STATUS) AS distinct_order_status,
+  COUNT(DISTINCT TOTAL_AMOUNT) AS distinct_total_amount,
+  COUNT(DISTINCT PAYMENT_METHOD) AS distinct_payment_method,
+  COUNT(DISTINCT CHANNEL) AS distinct_channel
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS;
+
+-- 5. Duplicate check on ORDER_ID
+SELECT ORDER_ID, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY ORDER_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 6. TOTAL_AMOUNT numeric stats
+SELECT
+  MIN(TOTAL_AMOUNT) AS min_amount,
+  MAX(TOTAL_AMOUNT) AS max_amount,
+  AVG(TOTAL_AMOUNT) AS avg_amount,
+  MEDIAN(TOTAL_AMOUNT) AS median_amount,
+  STDDEV(TOTAL_AMOUNT) AS stddev_amount,
+  PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY TOTAL_AMOUNT) AS p25_amount,
+  PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY TOTAL_AMOUNT) AS p75_amount,
+  SUM(TOTAL_AMOUNT) AS grand_total
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS;
+
+-- 7. Date range
+SELECT
+  MIN(ORDER_DATE) AS earliest_order,
+  MAX(ORDER_DATE) AS latest_order,
+  DATEDIFF('day', MIN(ORDER_DATE), MAX(ORDER_DATE)) AS date_span_days
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS;
+
+-- 8. Order status distribution
+SELECT ORDER_STATUS, COUNT(*) AS order_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY ORDER_STATUS
+ORDER BY order_count DESC;
+
+-- 9. Payment method distribution
+SELECT PAYMENT_METHOD, COUNT(*) AS order_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY PAYMENT_METHOD
+ORDER BY order_count DESC;
+
+-- 10. Channel distribution
+SELECT CHANNEL, COUNT(*) AS order_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY CHANNEL
+ORDER BY order_count DESC;
+
+-- 11. Orders by month (trend)
+SELECT
+  DATE_TRUNC('MONTH', ORDER_DATE) AS order_month,
+  COUNT(*) AS order_count,
+  SUM(TOTAL_AMOUNT) AS total_revenue,
+  AVG(TOTAL_AMOUNT) AS avg_order_value
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY order_month
+ORDER BY order_month;
+
+-- 12. Top 10 customers by order count
+SELECT CUSTOMER_ID, COUNT(*) AS order_count, SUM(TOTAL_AMOUNT) AS total_spent
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY CUSTOMER_ID
+ORDER BY order_count DESC
+LIMIT 10;
+
+-- 13. Revenue by channel and payment method (cross-tab)
+SELECT CHANNEL, PAYMENT_METHOD, COUNT(*) AS order_count, SUM(TOTAL_AMOUNT) AS total_revenue
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY CHANNEL, PAYMENT_METHOD
+ORDER BY CHANNEL, total_revenue DESC;
+
+-- 14. Order status by channel
+SELECT CHANNEL, ORDER_STATUS, COUNT(*) AS order_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY CHANNEL, ORDER_STATUS
+ORDER BY CHANNEL, order_count DESC;
+
+-- 15. Amount distribution (histogram buckets)
+SELECT
+  CASE
+    WHEN TOTAL_AMOUNT < 100 THEN 'Under 100'
+    WHEN TOTAL_AMOUNT BETWEEN 100 AND 499 THEN '100-499'
+    WHEN TOTAL_AMOUNT BETWEEN 500 AND 999 THEN '500-999'
+    WHEN TOTAL_AMOUNT BETWEEN 1000 AND 4999 THEN '1000-4999'
+    ELSE '5000+'
+  END AS amount_bucket,
+  COUNT(*) AS order_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS
+GROUP BY amount_bucket
+ORDER BY amount_bucket;
+
+-- 16. Orphan orders (no matching customer)
+SELECT o.*
+FROM CAPSTONE_EDA.PUBLIC.ORA_ORDERS o
+LEFT JOIN CAPSTONE_EDA.PUBLIC.ORA_CUSTOMERS c
+  ON o.CUSTOMER_ID = c.CUSTOMER_ID
+WHERE c.CUSTOMER_ID IS NULL;
+
+
+-- ===============================================
+-- DATA PROFILING: CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+-- ===============================================
+
+-- 1. Row count
+SELECT COUNT(*) AS total_rows FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS;
+
+-- 2. Sample data
+SELECT * FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS LIMIT 10;
+
+-- 3. Null counts per column
+SELECT
+  COUNT(*) AS total_rows,
+  SUM(CASE WHEN PRODUCT_ID IS NULL THEN 1 ELSE 0 END) AS null_product_id,
+  SUM(CASE WHEN PRODUCT_NAME IS NULL THEN 1 ELSE 0 END) AS null_product_name,
+  SUM(CASE WHEN CATEGORY IS NULL THEN 1 ELSE 0 END) AS null_category,
+  SUM(CASE WHEN SUB_CATEGORY IS NULL THEN 1 ELSE 0 END) AS null_sub_category,
+  SUM(CASE WHEN PRICE IS NULL THEN 1 ELSE 0 END) AS null_price
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS;
+
+-- 4. Distinct counts per column
+SELECT
+  COUNT(DISTINCT PRODUCT_ID) AS distinct_product_id,
+  COUNT(DISTINCT PRODUCT_NAME) AS distinct_product_name,
+  COUNT(DISTINCT CATEGORY) AS distinct_category,
+  COUNT(DISTINCT SUB_CATEGORY) AS distinct_sub_category,
+  COUNT(DISTINCT PRICE) AS distinct_price
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS;
+
+-- 5. Duplicate check on PRODUCT_ID
+SELECT PRODUCT_ID, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY PRODUCT_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 6. PRICE numeric stats
+SELECT
+  MIN(PRICE) AS min_price,
+  MAX(PRICE) AS max_price,
+  AVG(PRICE) AS avg_price,
+  MEDIAN(PRICE) AS median_price,
+  STDDEV(PRICE) AS stddev_price,
+  PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY PRICE) AS p25_price,
+  PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY PRICE) AS p75_price
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS;
+
+-- 7. Category distribution
+SELECT CATEGORY, COUNT(*) AS product_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY CATEGORY
+ORDER BY product_count DESC;
+
+-- 8. Sub-category distribution
+SELECT SUB_CATEGORY, COUNT(*) AS product_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY SUB_CATEGORY
+ORDER BY product_count DESC;
+
+-- 9. Category & sub-category breakdown
+SELECT CATEGORY, SUB_CATEGORY, COUNT(*) AS product_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY CATEGORY, SUB_CATEGORY
+ORDER BY CATEGORY, product_count DESC;
+
+-- 10. Price stats by category
+SELECT CATEGORY,
+  COUNT(*) AS product_count,
+  MIN(PRICE) AS min_price,
+  MAX(PRICE) AS max_price,
+  AVG(PRICE) AS avg_price,
+  MEDIAN(PRICE) AS median_price
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY CATEGORY
+ORDER BY avg_price DESC;
+
+-- 11. Price distribution (histogram)
+SELECT
+  CASE
+    WHEN PRICE < 50 THEN 'Under 50'
+    WHEN PRICE BETWEEN 50 AND 99 THEN '50-99'
+    WHEN PRICE BETWEEN 100 AND 249 THEN '100-249'
+    WHEN PRICE BETWEEN 250 AND 499 THEN '250-499'
+    WHEN PRICE BETWEEN 500 AND 999 THEN '500-999'
+    ELSE '1000+'
+  END AS price_bucket,
+  COUNT(*) AS product_count
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY price_bucket
+ORDER BY price_bucket;
+
+-- 12. Top 10 most expensive products
+SELECT PRODUCT_ID, PRODUCT_NAME, CATEGORY, SUB_CATEGORY, PRICE
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+ORDER BY PRICE DESC
+LIMIT 10;
+
+-- 13. Top 10 cheapest products
+SELECT PRODUCT_ID, PRODUCT_NAME, CATEGORY, SUB_CATEGORY, PRICE
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+ORDER BY PRICE ASC
+LIMIT 10;
+
+-- 14. Duplicate product name check
+SELECT PRODUCT_NAME, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.ORA_PRODUCTS
+GROUP BY PRODUCT_NAME
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+
+-- =============================================
+-- DATA PROFILING: CAPSTONE_EDA.PUBLIC.SHIPMENTS
+-- =============================================
+
+-- 1. Row count
+SELECT COUNT(*) AS total_rows FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS;
+
+-- 2. Sample data
+SELECT * FROM CAPSTONE_EDA.PUBLIC.SHIP
+MENTS LIMIT 10;
+
+-- 3. Null counts per column
+SELECT
+  COUNT(*) AS total_rows,
+  SUM(CASE WHEN SHIPMENT_ID IS NULL THEN 1 ELSE 0 END) AS null_shipment_id,
+  SUM(CASE WHEN ORDER_ID IS NULL THEN 1 ELSE 0 END) AS null_order_id,
+  SUM(CASE WHEN WAREHOUSE_ID IS NULL THEN 1 ELSE 0 END) AS null_warehouse_id,
+  SUM(CASE WHEN SHIPMENT_DATE IS NULL THEN 1 ELSE 0 END) AS null_shipment_date,
+  SUM(CASE WHEN DELIVERY_DATE IS NULL THEN 1 ELSE 0 END) AS null_delivery_date,
+  SUM(CASE WHEN SHIPMENT_STATUS IS NULL THEN 1 ELSE 0 END) AS null_shipment_status
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS;
+
+-- 4. Distinct counts per column
+SELECT
+  COUNT(DISTINCT SHIPMENT_ID) AS distinct_shipment_id,
+  COUNT(DISTINCT ORDER_ID) AS distinct_order_id,
+  COUNT(DISTINCT WAREHOUSE_ID) AS distinct_warehouse_id,
+  COUNT(DISTINCT SHIPMENT_DATE) AS distinct_shipment_date,
+  COUNT(DISTINCT DELIVERY_DATE) AS distinct_delivery_date,
+  COUNT(DISTINCT SHIPMENT_STATUS) AS distinct_shipment_status
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS;
+
+-- 5. Duplicate check on SHIPMENT_ID
+SELECT SHIPMENT_ID, COUNT(*) AS cnt
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+GROUP BY SHIPMENT_ID
+HAVING COUNT(*) > 1
+ORDER BY cnt DESC;
+
+-- 6. Date range for SHIPMENT_DATE
+SELECT
+  MIN(SHIPMENT_DATE) AS earliest_shipment,
+  MAX(SHIPMENT_DATE) AS latest_shipment,
+  DATEDIFF('day', MIN(SHIPMENT_DATE), MAX(SHIPMENT_DATE)) AS shipment_span_days
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS;
+
+-- 7. Date range for DELIVERY_DATE
+SELECT
+  MIN(DELIVERY_DATE) AS earliest_delivery,
+  MAX(DELIVERY_DATE) AS latest_delivery,
+  DATEDIFF('day', MIN(DELIVERY_DATE), MAX(DELIVERY_DATE)) AS delivery_span_days
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS;
+
+-- 8. Delivery time stats (days between shipment and delivery)
+SELECT
+  MIN(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS min_delivery_days,
+  MAX(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS max_delivery_days,
+  AVG(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS avg_delivery_days,
+  MEDIAN(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS median_delivery_days,
+  STDDEV(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS stddev_delivery_days
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+WHERE DELIVERY_DATE IS NOT NULL;
+
+-- 9. Shipment status distribution
+SELECT SHIPMENT_STATUS, COUNT(*) AS shipment_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+GROUP BY SHIPMENT_STATUS
+ORDER BY shipment_count DESC;
+
+-- 10. Warehouse distribution
+SELECT WAREHOUSE_ID, COUNT(*) AS shipment_count,
+  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) AS pct
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+GROUP BY WAREHOUSE_ID
+ORDER BY shipment_count DESC;
+
+-- 11. Shipments by month (trend)
+SELECT
+  DATE_TRUNC('MONTH', SHIPMENT_DATE) AS shipment_month,
+  COUNT(*) AS shipment_count
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+GROUP BY shipment_month
+ORDER BY shipment_month;
+
+-- 12. Avg delivery days by warehouse
+SELECT WAREHOUSE_ID,
+  COUNT(*) AS shipment_count,
+  AVG(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS avg_delivery_days,
+  MEDIAN(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS median_delivery_days
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+WHERE DELIVERY_DATE IS NOT NULL
+GROUP BY WAREHOUSE_ID
+ORDER BY avg_delivery_days;
+
+-- 13. Avg delivery days by status
+SELECT SHIPMENT_STATUS,
+  COUNT(*) AS shipment_count,
+  AVG(DATEDIFF('day', SHIPMENT_DATE, DELIVERY_DATE)) AS avg_delivery_days
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+WHERE DELIVERY_DATE IS NOT NULL
+GROUP BY SHIPMENT_STATUS
+ORDER BY avg_delivery_days;
+
+-- 14. Shipments with delivery before shipment (data quality)
+SELECT *
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+WHERE DELIVERY_DATE < SHIPMENT_DATE;
+
+-- 15. Orphan shipments (no matching order)
+SELECT s.*
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS s
+LEFT JOIN CAPSTONE_EDA.PUBLIC.ORA_ORDERS o
+  ON s.ORDER_ID = o.ORDER_ID
+WHERE o.ORDER_ID IS NULL;
+
+-- 16. Status by warehouse (cross-tab)
+SELECT WAREHOUSE_ID, SHIPMENT_STATUS, COUNT(*) AS shipment_count
+FROM CAPSTONE_EDA.PUBLIC.SHIPMENTS
+GROUP BY WAREHOUSE_ID, SHIPMENT_STATUS
+ORDER BY WAREHOUSE_ID, shipment_count DESC;
+
+
+
+
+
